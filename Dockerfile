@@ -51,8 +51,14 @@ RUN apt-get update \
     jq \
     openssh-client \
     ripgrep \
+    python3 \
+    python3-pip \
     && rm -rf /var/lib/apt/lists/*
 RUN corepack enable
+
+# Install Hermes Agent — required by the hermes_local adapter which spawns
+# hermes as a child process to execute agent tasks.
+RUN pip install --quiet hermes-agent
 
 WORKDIR /app
 COPY --from=paperclip-build /paperclip /app
