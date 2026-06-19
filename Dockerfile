@@ -14,6 +14,19 @@ ARG PAPERCLIP_REF=v2026.416.0
 WORKDIR /paperclip
 RUN git clone --depth 1 --branch "${PAPERCLIP_REF}" "${PAPERCLIP_REPO}" .
 RUN pnpm install --frozen-lockfile
+
+# Patch hermes-paperclip-adapter to add ollama-cloud to VALID_PROVIDERS
+# so the adapter correctly recognizes and displays the ollama-cloud provider
+# instead of falling back to "auto" or prefix-inferred "zai".
+RUN ADAPTER_DIR=$(find /paperclip/node_modules -path "*/hermes-paperclip-adapter/dist/shared/constants.js" | head -1) \
+    && if [ -n "$ADAPTER_DIR" ]; then \
+      sed -i 's/"kilocode",/"kilocode", "ollama-cloud",/' "$ADAPTER_DIR"; \
+      echo "Patched $ADAPTER_DIR"; \
+      grep -o "ollama-cloud" "$ADAPTER_DIR"; \
+    else \
+      echo "WARNING: hermes-paperclip-adapter constants.js not found"; \
+    fi
+
 RUN pnpm --filter @paperclipai/ui build
 RUN pnpm --filter @paperclipai/plugin-sdk build
 RUN pnpm --filter @paperclipai/server build
